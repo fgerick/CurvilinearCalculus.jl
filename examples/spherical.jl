@@ -9,17 +9,21 @@ x = r*cos(ϕ)*sin(θ)
 y = r*sin(ϕ)*sin(θ)
 z = r*cos(θ)
 
-cmap = CurvilinearCalculus.CoordinateMapping(x,y,z)
+cmap = CoordinateMapping(x,y,z)
 
-CS = CurvilinearCalculus.GenericCoordinates(cmap,q)
+CS = GenericCoordinates(cmap,q)
 
-CurvilinearCalculus.isorthogonal(CS)
-
-
+isorthogonal(CS)
 
 
-r1 = CurvilinearCalculus.CovariantVector(CurvilinearCalculus.Vector3D(1,0,0),CS);
 
-r2 = CurvilinearCalculus.ContravariantVector(CurvilinearCalculus.Vector3D(1,0,0),CS);
 
-CurvilinearCalculus.ContravariantVector(r1)
+r1 = CovariantVector(CurvilinearCalculus.Vector3D(1,0,0),CS);
+
+r2 = ContravariantVector(CurvilinearCalculus.Vector3D(1,0,0),CS);
+
+ContravariantVector(r1)
+
+f=CurvilinearCalculus.SymFunction("f")
+
+CartesianVector(∇(f(r,θ,ϕ),CS))
