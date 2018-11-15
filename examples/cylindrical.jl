@@ -8,7 +8,8 @@ q = Vector3D(r,θ,z)
 x = r*cos(θ)
 y = r*sin(θ)
 z = z
-
+assume(r,:positive)
+assume(r,:nonzero)
 cmap = CoordinateMapping(x,y,z)
 
 CS = GenericCoordinates(cmap,q)
@@ -16,40 +17,88 @@ CS = GenericCoordinates(cmap,q)
 isorthogonal(CS)
 
 
-CurvilinearCalculus.simplify.(CS.e_cov[1])
-
-r1 = CovariantVector([1,2,0],CS);
-
-r2 = ContravariantVector(CurvilinearCalculus.Vector3D(1,1,0),CS);
-
 f=CurvilinearCalculus.SymFunction("f")
 g=CurvilinearCalculus.SymFunction("g")
-u₁,u₂,u₃=CurvilinearCalculus.SymFunction("u₁,u₂,u₃")
+u₁,u₂,u₃=CurvilinearCalculus.SymFunction("u₁,u₂,u₃");
 
-r3 = CovariantVector([u₁(r,θ,z),u₂(r,θ,z),u₃(r,θ,z)]./.√diag(CS.G),CS)
-r4 = ContravariantVector(r3) #[u₁(r,θ,z),u₂(r,θ,z),u₃(r,θ,z)],CS)
-CovariantVector(r3) == r3
-# r2 = CovariantVector([f(r),0,0],CS)
-# CS.g_contra
-# CurvilinearCalculus.differentiate(r4,1,2)
-# CurvilinearCalculus.differentiate(r3,1,2)
+r_physical = PhysicalVector([u₁(r,θ,z),u₂(r,θ,z),u₃(r,θ,z)],CS)
+r_cov = CovariantVector(r_physical)
+r_contra = CovariantVector(r_physical)
 
-# r2 = CovariantVector([1,0,θ],CS)
 
-simplify(divergence(r4))
-simplify(divergence(r3))
-# simplify(divergence(r2))
+simplify(refine(divergence(r_cov)(sign(r)=>1)))
+simplify(refine(divergence(r_contra)(sign(r)=>1)))
 
-simplify(divergence(∇(f(r,θ,z),CS))) == simplify(CurvilinearCalculus.laplacian(f(r,θ,z),CS))
+CS.G
+PhysicalVector(r_contra).r == r_physical.r
+
+simplify.(refine.(map(x->x(sign(r)=>1),PhysicalVector(curl(r_cov)).r)))
+
+divergence(curl(r_contra))
+
+curl(CovariantVector(∇(f(r,θ,z),CS)))
+
+
+typeof(r4)
+typeof(curl(r3))
+
+∇(f(r,θ,z),CS)
+CovariantVector(∇(f(r,θ,z),CS))
+
+simplify.(refine.(PhysicalVector(CovariantVector(∇(f(r,θ,z),CS))).r))
+
+
+
+
+simplify.(refine.(PhysicalVector(∇(f(r,θ,z),CS)).r))
+
+
+
+
+typeof(r4)
+
+simplify.(refine.(PhysicalVector(curl(∇(f(r,θ,z),CS)))))
+
+simplify.(refine.(PhysicalVector(curl(CovariantVector(∇(f(r,θ,z),CS))))))
+
+simplify.(refine.(PhysicalVector(CovariantVector(∇(f(r,θ,z),CS)))))
+
+simplify.(refine.(PhysicalVector(∇(f(r,θ,z),CS))))
+
+CS.invG
+curl(∇(f(r,θ,z),CS))
+
+simplify(norm(CS.g_cov[1]))
+
+simplify.(curl(CovariantVector(∇(f(r,θ,z),CS).r,CS)).r)
+
+simplify(refine(divergence(curl(r4)))(sign(r)=>1))
+
+
+
+
+simplify.(refine.(curl(CovariantVector(∇(f(r,θ,z),CS))).r))
+
+
+
+
 simplify(divergence(curl(r3)))
+# curl()
+# simplify.(curl(CovariantVector(∇(f(r,θ,z),CS))).r)
+# simplify(CurvilinearCalculus.laplacian(f(r,θ,z),CS))
+# simplify(divergence(curl(r3)))
 # ∇(f(r,θ,z),CS)
 
-CurvilinearCalculus.differentiate(r3,1,3)
+CurvilinearCalculus.differentiate(r3,3,2)
 
 gradu=simplify.([CurvilinearCalculus.differentiate(r3,j,k) for j=1:3,k=1:3])
 
-gradu[2,1]
+# gradu[2,1]
+simplify.(curl()
+
+
 simplify.(curl(∇(f(r,θ,z),CS)).r)
+simplify(refine(divergence(curl(r3)))(sign(r)=>1))
 
 simplify(r2⋅(curl(r2)))
 

@@ -22,35 +22,13 @@ CS = GenericCoordinates(cmap,q)
 @test Γ==CS.Γ
 
 
+f=CurvilinearCalculus.SymFunction("f")
+u₁,u₂,u₃=CurvilinearCalculus.SymFunction("u₁,u₂,u₃");
 
-differentiate()
+r_physical = PhysicalVector([u₁(q...),u₂(q...),u₃(q...)],CS)
+r_cov = CovariantVector(r_physical)
+r_contra = CovariantVector(r_physical)
 
-
-
-
-# CurvilinearCalculus.simplify.(CS.e_cov[1])
-#
-# r1 = CovariantVector([1,2,0],CS);
-#
-# r2 = ContravariantVector(CurvilinearCalculus.Vector3D(1,1,0),CS);
-#
-# f=CurvilinearCalculus.SymFunction("f")
-# g=CurvilinearCalculus.SymFunction("g")
-#
-# r3 = ContravariantVector([0,0,f(r)],CS)
-# r2 = CovariantVector([f(r),0,0],CS)
-# CS.g_contra
-#
-# simplify.(curl(∇(f(r,θ,ϕ),CS)).r)
-#
-#
-# simplify(divergence(curl(r3)))
-#
-# norm(r1)
-# simplify(dot(r3,cross(r1,r3)))
-# simplify(dot(CartesianVector(r3),CartesianVector(curl(r3))))
-# ContravariantVector(r1)
-# simplify(divergence(curl(r3)))
-# simplify(divergence(curl(r3)))
-#
-# simplify(divergence(r2))
+@test curl(grad(f(q...))) == 0
+@test divergence(curl(r_cov)) == 0
+@test divergence(curl(r_contra)) == 0
