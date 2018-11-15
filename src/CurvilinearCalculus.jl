@@ -109,25 +109,33 @@ isorthogonal(C::GenericCoordinates) = isdiag(C.G)
 
 
 
+#maybe later:
+
+# struct Scalar
+#     val::Sym
+#     C::GenericCoordinates
+# end
+
 ## Covariant and contravariant basis
 #types:
+abstract type CCVector end
 
 
-struct CovariantVector
+struct CovariantVector <: CCVector
     r::Vector3D
     C::GenericCoordinates
 end
 
-struct ContravariantVector
+struct ContravariantVector <: CCVector
     r::Vector3D
     C::GenericCoordinates
 end
 
-struct CartesianVector
+struct CartesianVector <: CCVector
     r::Vector3D
 end
 
-struct PhysicalVector
+struct PhysicalVector <: CCVector
     r::Vector3D
     C::GenericCoordinates
 end
@@ -150,6 +158,19 @@ PhysicalVector(x::ContravariantVector) = PhysicalVector(CovariantVector(x))#.r .
 
 CovariantVector(x::PhysicalVector) = CovariantVector(x.r ./ .√diag(x.C.G),x.C)
 ContravariantVector(x::PhysicalVector) = ContravariantVector(x.r ./ .√diag(x.C.invG),x.C)
+
+#arithmetic functions:
+import Base.*,Base.-,Base.+,Base./
+
+*(a::Sym,x::T) where T<: CCVector = T(x.r*a,x.C)
+*(x::T,a::Sym) where T<: CCVector = a*x
+
+/(x::T,a::Sym) where T<: CCVector = T(x.r ./a,x.C)
+
++(x::T,y::T) where T<: CCVector = T(x.r .+ y.r, x.C)
+-(x::T,y::T) where T<: CCVector = T(x.r .- y.r, x.C)
+
+
 
 #algebra for the two bases
 

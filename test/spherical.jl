@@ -29,6 +29,6 @@ r_physical = PhysicalVector([u₁(q...),u₂(q...),u₃(q...)],CS)
 r_cov = CovariantVector(r_physical)
 r_contra = CovariantVector(r_physical)
 
-@test curl(grad(f(q...))) == 0
+@test simplify.(refine.(curl(∇(f(q...),CS)).r)) == Vector3D(0,0,0)
 @test divergence(curl(r_cov)) == 0
 @test divergence(curl(r_contra)) == 0

@@ -36,7 +36,7 @@ simplify.(refine.(map(x->x(sign(r)=>1),PhysicalVector(curl(r_cov)).r)))
 
 divergence(curl(r_contra))
 
-curl(CovariantVector(∇(f(r,θ,z),CS)))
+curl(∇(f(r,θ,z),CS)).r ==Vector3D(0,0,0)
 
 
 typeof(r4)
