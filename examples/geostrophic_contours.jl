@@ -25,4 +25,4 @@ isorthogonal(CS)
 
 ψ = CurvilinearCalculus.SymFunction("ψ")
 
-simplify(divergence(1/H*∇(ψ(q...),CS))(a=>1,b=>1,c=>1))
+simplify((divergence(1/H*∇(ψ(q...),CS)+1/(3H)*(∇(H,CS)×∇(ψ(H,ϕ),CS))×∇(H,CS))(a=>1,b=>1,c=>1))

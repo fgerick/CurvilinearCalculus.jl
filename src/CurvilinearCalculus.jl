@@ -9,7 +9,7 @@ export CoordinateSystem, GenericCoordinates, @coordinates, isorthogonal,
         CartesianVector, PhysicalVector
 
 #sympy:
-export Q, assume, global_assumptions, simplify, refine
+export Q, assume, global_assumptions, simplify, refine, ∂
 
 #algebra & calculus
 export dot,cross
@@ -33,6 +33,7 @@ const Metric = SMatrix{3,3,Sym}
 #convenient definitions for SymPy use:
 π = PI
 ∂ = diff
+import SymPy.simplify
 
 # define sympy dot as real dot product only to avoid assumptions:
 import LinearAlgebra.dot
@@ -65,15 +66,21 @@ macro coordinates(x,y,z)
     return q
 end
 
+
+
+struct CartesianVector
+    r::Vector3D
+end
+
+
 """
 Define Coordinate system...
 """
 struct GenericCoordinates <: CoordinateSystem
     q::SVector{3,Coordinate}
-    g_cov::Vector{Vector3D}
-    g_contra::Vector{Vector3D}
-    e_cov::Vector{Vector3D}
-    e_contra::Vector{Vector3D}
+    g_cov::Vector{CartesianVector}
+    g_contra::Vector{CartesianVector}
+    e_cov::Vector{CartesianVector}
     G::Metric
     invG::Metric
     J::Sym
@@ -81,23 +88,23 @@ struct GenericCoordinates <: CoordinateSystem
     Γ::SArray{Tuple{3,3,3},Sym}
 
     function GenericCoordinates(r::CoordinateMapping, q::SVector{3,Coordinate})
-        g = [∂.(r,q) for q in q]
+        g = [CartesianVector(∂.(r,q)) for q in q]
         J = simplify(g[1] ⋅ (g[2] × g[3]))
-        g¹= simplify.(1/J * g[2] × g[3])
-        g²= simplify.(1/J * g[3] × g[1])
-        g³= simplify.(1/J * g[1] × g[2])
+        g¹= simplify(1/J * g[2] × g[3])
+        g²= simplify(1/J * g[3] × g[1])
+        g³= simplify(1/J * g[1] × g[2])
         g_contra = [g¹, g², g³]
         G = simplify.([g[i] ⋅ g[j] for i = 1:3, j = 1:3])
         # invG = simplify.(inv(G))
         invG = simplify.([g_contra[i] ⋅ g_contra[j] for i = 1:3, j = 1:3])
 
-        e_cov = [simplify.(g[i]/√G[i,i]) for i in 1:3]
-        e_contra = [simplify.(g_contra[i]/√invG[i,i]) for i in 1:3]
+        e_cov = [simplify(g[i]/√G[i,i]) for i in 1:3]
+        # e_contra = [simplify.(g_contra[i]/√invG[i,i]) for i in 1:3]
 
         Γ =  simplify.([sum([invG[i,p]*(∂(G[p,j],q[k]) + ∂(G[p,k],q[j]) - ∂(G[j,k],q[p])) for p=1:3])/2 for i=1:3,j=1:3,k=1:3])
         gdet = simplify(det(G))
         @assert J^2==gdet
-        return new(q,g,g_contra,e_cov, e_contra, G,invG,J,gdet,Γ)
+        return new(q,g,g_contra,e_cov, G,invG,J,gdet,Γ)
     end
 end
 
@@ -131,14 +138,12 @@ struct ContravariantVector <: CCVector
     C::GenericCoordinates
 end
 
-struct CartesianVector <: CCVector
-    r::Vector3D
-end
-
 struct PhysicalVector <: CCVector
     r::Vector3D
     C::GenericCoordinates
 end
+
+
 
 #conversion between contravariant and covariant basis and Cartesian
 
@@ -152,6 +157,7 @@ ContravariantVector(x::ContravariantVector) = x
 
 CartesianVector(x::CovariantVector) = CartesianVector(sum([x.r[i]*x.C.g_cov[i] for i=1:3]))
 CartesianVector(x::ContravariantVector) = CartesianVector(sum([x.r[i]*x.C.g_contra[i] for i=1:3]))
+CartesianVector(x::CartesianVector) = x
 
 PhysicalVector(x::CovariantVector) = PhysicalVector(x.r .* .√diag(x.C.G),x.C)
 PhysicalVector(x::ContravariantVector) = PhysicalVector(CovariantVector(x))#.r .* .√diag(x.C.invG) # PhysicalVector(CovariantVector(x))
@@ -169,6 +175,14 @@ import Base.*,Base.-,Base.+,Base./
 
 +(x::T,y::T) where T<: CCVector = T(x.r .+ y.r, x.C)
 -(x::T,y::T) where T<: CCVector = T(x.r .- y.r, x.C)
+
+*(a::Sym,x::CartesianVector) = CartesianVector(x.r*a)
+*(x::CartesianVector,a::Sym) = a*x
+
+/(x::CartesianVector,a::Sym) = CartesianVector(x.r ./a)
+
++(x::CartesianVector,y::CartesianVector) = CartesianVector(x.r .+ y.r)
+-(x::CartesianVector,y::CartesianVector) = CartesianVector(x.r .- y.r)
 
 
 
@@ -213,6 +227,8 @@ end
 cross(x::CovariantVector,y::ContravariantVector) = cross(x,CovariantVector(y))
 cross(x::ContravariantVector,y::CovariantVector) = cross(x,ContravariantVector(y))
 
+cross(x::CartesianVector,y::CartesianVector) = CartesianVector(cross(x.r,y.r))
+
 
 #calculus (see Aris 1989; p.169-170)
 
@@ -254,5 +270,11 @@ function curl(u::ContravariantVector)
     return CovariantVector([b1,b2,b3],u.C)
 end
 curl(u::CovariantVector) = curl(ContravariantVector(u))
+
+
+
+#sympy conveniences
+simplify(x::T) where T<:CCVector = T(simplify.(x.r),x.C)
+simplify(x::CartesianVector) = CartesianVector(simplify.(x.r))
 
 end # module

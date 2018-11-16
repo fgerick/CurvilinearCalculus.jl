@@ -2,9 +2,9 @@ using Revise, CurvilinearCalculus, LinearAlgebra
 
 # q = CurvilinearCalculus.@syms r θ ϕ
 
-q = CurvilinearCalculus.@coordinates r θ ϕ;
+q = @coordinates r θ ϕ;
 r,θ,ϕ = q;
-CurvilinearCalculus.@syms a b c real=true nonzero=true
+# CurvilinearCalculus.@syms a b c real=true nonzero=true
 x = r*cos(ϕ)*sin(θ)
 y = r*sin(ϕ)*sin(θ)
 z = r*cos(θ)
@@ -16,16 +16,9 @@ CS = GenericCoordinates(cmap,q)
 isorthogonal(CS)
 
 
-CurvilinearCalculus.simplify.(CS.e_cov[1])
-
-r1 = CovariantVector([1,2,0],CS);
-
-r2 = ContravariantVector(CurvilinearCalculus.Vector3D(1,1,0),CS);
-
 f=CurvilinearCalculus.SymFunction("f")
-g=CurvilinearCalculus.SymFunction("g")
 u₁,u₂,u₃=CurvilinearCalculus.SymFunction("u₁,u₂,u₃")
-r3 = CovariantVector([u₁(r,θ,ϕ),u₂(r,θ,ϕ),u₃(r,θ,ϕ)],CS)
+# r3 = CovariantVector([u₁(r,θ,ϕ),u₂(r,θ,ϕ),u₃(r,θ,ϕ)],CS)
 
 # CS.g_contra
 diag(CS.G)
@@ -36,7 +29,7 @@ gradu=simplify.([CurvilinearCalculus.differentiate(r3,j,k) for j=1:3,k=1:3])
 
 gradu[1,3]
 simplify.(curl(∇(f(r,θ,ϕ),CS)).r)
-
+simplify(divergence(∇(f(r,θ,ϕ),CS))) == simplify(laplacian(f(r,θ,ϕ),CS))
 [differentiate()]
 CS.Γ
 

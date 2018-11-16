@@ -19,6 +19,7 @@ CS = GenericCoordinates(cmap,q)
 Γ[2,3,3] = -sin(θ)*cos(θ)
 Γ = simplify.(Γ)
 Γ = SArray{Tuple{3,3,3},Sym}(Γ...)
+
 @test Γ==CS.Γ
 
 
@@ -29,6 +30,10 @@ r_physical = PhysicalVector([u₁(q...),u₂(q...),u₃(q...)],CS)
 r_cov = CovariantVector(r_physical)
 r_contra = CovariantVector(r_physical)
 
+# @test PhysicalVector(∇(f(q...),CS)).r == Vector3D(∂(f(q...),r),∂(f(q...),θ)/r,∂(f(q...),z))
+
 @test simplify.(refine.(curl(∇(f(q...),CS)).r)) == Vector3D(0,0,0)
 @test divergence(curl(r_cov)) == 0
 @test divergence(curl(r_contra)) == 0
+
+@test simplify(laplacian(f(q...),CS)) == simplify(divergence(∇(f(q...),CS)))
