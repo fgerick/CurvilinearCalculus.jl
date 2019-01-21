@@ -78,14 +78,14 @@ end
 
 Defines a (non-)orthogonal coordinate system with fields
 
-`q` Coordinates
-`g_cov` Covariant basis vectors (in cartesian coordinates)
-`g_contra` Contravariant basis vectors (in cartesian coordinates)
-`e_cov` Covariant unit vectors (in cartesian coordinates)
-`G` Metric (defined by dot products of covariant basis vectors)
-`invG` Inverse of metric
-`J` Volume element
-`g` J^2 or det(G)
+`q` Coordinates,
+`g_cov` Covariant basis vectors (in cartesian coordinates),
+`g_contra` Contravariant basis vectors (in cartesian coordinates),
+`e_cov` Covariant unit vectors (in cartesian coordinates),
+`G` Metric (defined by dot products of covariant basis vectors),
+`invG` Inverse of metric,
+`J` Volume element,
+`g` J^2 or det(G),
 `Γ` Christoffel symbols Γⁱⱼₖ → Γ[i,j,k]
 
 """
