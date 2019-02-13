@@ -269,21 +269,21 @@ laplacian(f::Sym,C::CoordinateSystem) = 1/√C.g * sum([∂(√C.g*sum([C.invG[i
 
 
 #
-# curl(u::ContravariantVector) = CovariantVector( [1/√u.C.g*sum([ϵ([i,j,k])*sum([u.C.G[k,p]*differentiate(u,p,j) for p=1:3])
-#                                                     for j=1:3,k=1:3 ]) for i=1:3] ,u.C)
+curl(u::CovariantVector) = CovariantVector( [1/√u.C.g*sum([ϵt[i,j,k]*sum([u.C.G[k,p]*differentiate(u,p,j) for p=1:3])
+                                                    for j=1:3,k=1:3 ]) for i=1:3] ,u.C)
 #
-# curl(u::CovariantVector) = ContravariantVector( [1/√u.C.g*sum([ϵ([i,j,k])*differentiate(u,k,j) for j=1:3,k=1:3 ]) for i=1:3] ,u.C)
-
 #use equation 5.118 from curvilinear pdf lecture notes Brannon - Curvilinear Analysis in a Euclidean Space
 
-function curl(u::ContravariantVector)
-    b1 = 1/(√u.C.g)*( differentiate(u,2,3)-differentiate(u,3,2) )
-    b2 = 1/(√u.C.g)*( differentiate(u,3,1)-differentiate(u,1,3) )
-    b3 = 1/(√u.C.g)*( differentiate(u,1,2)-differentiate(u,2,1) )
-    return CovariantVector([b1,b2,b3],u.C)
-end
-curl(u::CovariantVector) = curl(ContravariantVector(u))
+# function curl(u::ContravariantVector)
+#     b1 = -1/(√u.C.g)*( differentiate(u,2,3)-differentiate(u,3,2) )
+#     b2 = -1/(√u.C.g)*( differentiate(u,3,1)-differentiate(u,1,3) )
+#     b3 = -1/(√u.C.g)*( differentiate(u,1,2)-differentiate(u,2,1) )
+#     return CovariantVector([b1,b2,b3],u.C)
+# end
+# curl(u::CovariantVector) = curl(ContravariantVector(u))
 
+
+curl(u::ContravariantVector) = CovariantVector( [1/√u.C.g*sum([ϵt[i,j,k]*differentiate(u,k,j) for j=1:3,k=1:3 ]) for i=1:3] ,u.C)
 
 
 #sympy conveniences
