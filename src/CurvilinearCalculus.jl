@@ -160,8 +160,8 @@ end
 
 import Base.show
 
-show(x::T) where T<: CCVector = show(Vector(x.r))
-
+Base.show(io::IO, ::MIME"text/latex", x::T) where T<: CCVector = print(io, SymPy.sympy.latex(Vector(x.r), mode="equation*"))
+Base.show(io::IO, ::MIME"text/latex", x::CartesianVector) = print(io, SymPy.sympy.latex(Vector(x.r), mode="equation*"))
 
 #conversion between contravariant and covariant basis and Cartesian
 
