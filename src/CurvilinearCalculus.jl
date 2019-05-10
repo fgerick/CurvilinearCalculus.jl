@@ -45,7 +45,7 @@ dot(x::Vector3D, y::Vector3D) = sum(x.*y)
 
 
 #make assumptions work (kind of?)
-@pyimport sympy as sp
+sp = pyimport("sympy")
 global_assumptions=sp.assumptions[:assume][:global_assumptions];
 
 function assumeglobal!(as,global_assumptions=sp.assumptions[:assume][:global_assumptions])
@@ -94,6 +94,7 @@ struct GenericCoordinates <: CoordinateSystem
     g_cov::Vector{CartesianVector}
     g_contra::Vector{CartesianVector}
     e_cov::Vector{CartesianVector}
+    F::Metric
     G::Metric
     invG::Metric
     J::Sym
@@ -108,6 +109,7 @@ struct GenericCoordinates <: CoordinateSystem
         g³= simplify(1/J * g[1] × g[2])
         g_contra = [g¹, g², g³]
         G = simplify.([g[i] ⋅ g[j] for i = 1:3, j = 1:3])
+        F = [∂(r[i],q[j]) for i=1:3,j=1:3] #transformation
         # invG = simplify.(inv(G))
         invG = simplify.([g_contra[i] ⋅ g_contra[j] for i = 1:3, j = 1:3])
 
@@ -116,8 +118,8 @@ struct GenericCoordinates <: CoordinateSystem
 
         Γ =  simplify.([sum([invG[i,p]*(∂(G[p,j],q[k]) + ∂(G[p,k],q[j]) - ∂(G[j,k],q[p])) for p=1:3])/2 for i=1:3,j=1:3,k=1:3])
         gdet = simplify(det(G))
-        @assert J^2==gdet
-        return new(q,g,g_contra,e_cov, G,invG,J,gdet,Γ)
+        # @assert J^2==gdet
+        return new(q,g,g_contra,e_cov,F, G,invG,J,gdet,Γ)
     end
 end
 
@@ -156,6 +158,9 @@ struct PhysicalVector <: CCVector
     C::GenericCoordinates
 end
 
+import Base.show
+
+show(x::T) where T<: CCVector = show(Vector(x.r))
 
 
 #conversion between contravariant and covariant basis and Cartesian
@@ -170,6 +175,7 @@ ContravariantVector(x::ContravariantVector) = x
 
 CartesianVector(x::CovariantVector) = CartesianVector(sum([x.r[i]*x.C.g_cov[i] for i=1:3]))
 CartesianVector(x::ContravariantVector) = CartesianVector(sum([x.r[i]*x.C.g_contra[i] for i=1:3]))
+CartesianVector(x::PhysicalVector) = CartesianVector(sum([x.r[i]*x.C.e_cov[i] for i=1:3]))
 CartesianVector(x::CartesianVector) = x
 
 PhysicalVector(x::CovariantVector) = PhysicalVector(x.r .* .√diag(x.C.G),x.C)
@@ -177,6 +183,9 @@ PhysicalVector(x::ContravariantVector) = PhysicalVector(CovariantVector(x))#.r .
 
 CovariantVector(x::PhysicalVector) = CovariantVector(x.r ./ .√diag(x.C.G),x.C)
 ContravariantVector(x::PhysicalVector) = ContravariantVector(x.r ./ .√diag(x.C.invG),x.C)
+
+CovariantVector(x::CartesianVector,CS::CoordinateSystem) = CovariantVector(inv(CS.F))*x.r,CS)
+ContravariantVector(x::CartesianVector,CS::CoordinateSystem) = ContravariantVector(CovariantVector(x,CS))
 
 #arithmetic functions:
 import Base.*,Base.-,Base.+,Base./
