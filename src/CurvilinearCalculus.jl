@@ -46,10 +46,10 @@ dot(x::Vector3D, y::Vector3D) = sum(x.*y)
 
 #make assumptions work (kind of?)
 sp = pyimport("sympy")
-global_assumptions=sp.assumptions[:assume][:global_assumptions];
+global_assumptions=sp.assumptions.assume.global_assumptions #[:assume][:global_assumptions];
 
-function assumeglobal!(as,global_assumptions=sp.assumptions[:assume][:global_assumptions])
-    global_assumptions[:add](as)
+function assumeglobal!(as,global_assumptions=sp.assumptions.assume.global_assumptions #[:assume][:global_assumptions])
+    global_assumptions.add(as)
 end
 
 function assume(var,condition)
