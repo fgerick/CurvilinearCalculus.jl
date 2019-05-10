@@ -184,7 +184,7 @@ PhysicalVector(x::ContravariantVector) = PhysicalVector(CovariantVector(x))#.r .
 CovariantVector(x::PhysicalVector) = CovariantVector(x.r ./ .√diag(x.C.G),x.C)
 ContravariantVector(x::PhysicalVector) = ContravariantVector(x.r ./ .√diag(x.C.invG),x.C)
 
-CovariantVector(x::CartesianVector,CS::CoordinateSystem) = CovariantVector(inv(CS.F))*x.r,CS)
+CovariantVector(x::CartesianVector,CS::CoordinateSystem) = CovariantVector(inv(CS.F)*x.r,CS)
 ContravariantVector(x::CartesianVector,CS::CoordinateSystem) = ContravariantVector(CovariantVector(x,CS))
 
 #arithmetic functions:
