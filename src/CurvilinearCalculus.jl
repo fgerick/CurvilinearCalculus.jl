@@ -194,9 +194,13 @@ import Base.*,Base.-,Base.+,Base./
 *(x::T,a::Sym) where T<: CCVector = a*x
 
 /(x::T,a::Sym) where T<: CCVector = T(x.r ./a,x.C)
+#
+# +(x::T,y::T) where T<: CCVector = T(x.r .+ y.r, x.C)
+# -(x::T,y::T) where T<: CCVector = T(x.r .- y.r, x.C)
 
-+(x::T,y::T) where T<: CCVector = T(x.r .+ y.r, x.C)
--(x::T,y::T) where T<: CCVector = T(x.r .- y.r, x.C)
++(x::T1,y::T2) where {T1<: CCVector,T2<: CCVector} = T1(x.r .+ y.r, x.C)
+-(x::T1,y::T2) where {T1<: CCVector,T2<: CCVector} = T1(x.r .- y.r, x.C)
+
 
 *(a::Sym,x::CartesianVector) = CartesianVector(x.r*a)
 *(x::CartesianVector,a::Sym) = a*x
@@ -207,6 +211,18 @@ import Base.*,Base.-,Base.+,Base./
 -(x::CartesianVector,y::CartesianVector) = CartesianVector(x.r .- y.r)
 
 
+*(a::Number,x::T) where T<: CCVector = T(x.r*a,x.C)
+*(x::T,a::Number) where T<: CCVector = a*x
+
+/(x::T,a::Number) where T<: CCVector = T(x.r ./a,x.C)
+
+# +(x::T,y::T) where T<: CCVector = T(x.r .+ y.r, x.C)
+# -(x::T,y::T) where T<: CCVector = T(x.r .- y.r, x.C)
+
+*(a::Number,x::CartesianVector) = CartesianVector(x.r*a)
+*(x::CartesianVector,a::Number) = a*x
+
+/(x::CartesianVector,a::Number) = CartesianVector(x.r ./a)
 
 #algebra for the two bases
 
