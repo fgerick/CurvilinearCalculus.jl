@@ -282,11 +282,11 @@ grad(f::Sym,C::CoordinateSystem) = ContravariantVector([∂(f,C.q[i]) for i=1:3]
 ∇ = grad
 
 divergence(u::ContravariantVector) = sum([differentiate(u,i,i) for i=1:3])
-divergence(u::CovariantVector) = divergence(ContravariantVector(u))
-# divergence(u::CovariantVector) = sum([u.C.invG[i,j]*differentiate(u,i,j) for i=1:3,j=1:3])
+# divergence(u::CovariantVector) = divergence(ContravariantVector(u))
+divergence(u::CovariantVector) = sum([u.C.invG[i,j]*differentiate(u,i,j) for i=1:3,j=1:3])
 
 # divergence(u::CovariantVector) = 1/√u.C.g*sum([∂(√u.C.g*u.r[i] , u.C.q[i]) for i=1:3])
-# divergence(u::ContravariantVector) = divergence(CovariantVector(u)) 
+# divergence(u::ContravariantVector) = divergence(CovariantVector(u))
 # divergence(u::ContravariantVector) = 1/√u.C.g*sum([∂(√u.C.g*sum([u.C.invG[i,j]*u.r[i] for i=1:3]) , u.C.q[j]) for j=1:3])
 
 laplacian(f::Sym,C::CoordinateSystem) = 1/√C.g * sum([∂(√C.g*sum([C.invG[i,j]*∂(f,C.q[i]) for i=1:3]),C.q[j]) for j=1:3])
