@@ -281,9 +281,9 @@ differentiate(A::ContravariantVector,j::Int,k::Int) = ∂(A.r[j],A.C.q[k]) - sum
 grad(f::Sym,C::CoordinateSystem) = ContravariantVector([∂(f,C.q[i]) for i=1:3],C)
 ∇ = grad
 
-divergence(u::ContravariantVector) = sum([differentiate(u,i,i) for i=1:3])
+divergence(u::CovariantVector) = sum([differentiate(u,i,i) for i=1:3])
 # divergence(u::CovariantVector) = divergence(ContravariantVector(u))
-divergence(u::CovariantVector) = sum([u.C.invG[i,j]*differentiate(u,i,j) for i=1:3,j=1:3])
+divergence(u::ContravariantVector) = sum([u.C.invG[i,j]*differentiate(u,i,j) for i=1:3,j=1:3])
 
 # divergence(u::CovariantVector) = 1/√u.C.g*sum([∂(√u.C.g*u.r[i] , u.C.q[i]) for i=1:3])
 # divergence(u::ContravariantVector) = divergence(CovariantVector(u))
