@@ -93,7 +93,7 @@ struct GenericCoordinates <: CoordinateSystem
     q::SVector{3,Coordinate}
     g_cov::Vector{CartesianVector}
     g_contra::Vector{CartesianVector}
-    e_cov::Vector{CartesianVector}
+    e_contra::Vector{CartesianVector}
     F::Metric
     G::Metric
     invG::Metric
@@ -102,24 +102,24 @@ struct GenericCoordinates <: CoordinateSystem
     Γ::SArray{Tuple{3,3,3},Sym}
 
     function GenericCoordinates(r::CoordinateMapping, q::SVector{3,Coordinate})
-        g = [CartesianVector(∂.(r,q)) for q in q]
-        J = simplify(g[1] ⋅ (g[2] × g[3]))
-        g¹= simplify(1/J * g[2] × g[3])
-        g²= simplify(1/J * g[3] × g[1])
-        g³= simplify(1/J * g[1] × g[2])
-        g_contra = [g¹, g², g³]
-        G = simplify.([g[i] ⋅ g[j] for i = 1:3, j = 1:3])
+        g_contra = [CartesianVector(∂.(r,q)) for q in q]
+        J = simplify(g_contra[1] ⋅ (g_contra[2] × g_contra[3]))
+        g¹= simplify(1/J * g_contra[2] × g_contra[3])
+        g²= simplify(1/J * g_contra[3] × g_contra[1])
+        g³= simplify(1/J * g_contra[1] × g_contra[2])
+        g_cov = [g¹, g², g³]
+        G = simplify.([g_contra[i] ⋅ g_contra[j] for i = 1:3, j = 1:3])
         F = [∂(r[i],q[j]) for i=1:3,j=1:3] #transformation
         # invG = simplify.(inv(G))
-        invG = simplify.([g_contra[i] ⋅ g_contra[j] for i = 1:3, j = 1:3])
+        invG = simplify.([g_cov[i] ⋅ g_cov[j] for i = 1:3, j = 1:3])
 
-        e_cov = [simplify(g[i]/√G[i,i]) for i in 1:3]
+        e_contra = [simplify(g_contra[i]/√G[i,i]) for i in 1:3]
         # e_contra = [simplify.(g_contra[i]/√invG[i,i]) for i in 1:3]
 
         Γ =  simplify.([sum([invG[i,p]*(∂(G[p,j],q[k]) + ∂(G[p,k],q[j]) - ∂(G[j,k],q[p])) for p=1:3])/2 for i=1:3,j=1:3,k=1:3])
         gdet = simplify(det(G))
         # @assert J^2==gdet
-        return new(q,g,g_contra,e_cov,F, G,invG,J,gdet,Γ)
+        return new(q,g_cov,g_contra,e_cov,F, G,invG,J,gdet,Γ)
     end
 end
 
@@ -165,9 +165,9 @@ Base.show(io::IO, ::MIME"text/latex", x::CartesianVector) = print(io, SymPy.symp
 
 #conversion between contravariant and covariant basis and Cartesian
 
-CovariantVector(x::ContravariantVector) = CovariantVector(x.C.invG*x.r,x.C)
+CovariantVector(x::ContravariantVector) = CovariantVector(x.C.G*x.r,x.C)
 
-ContravariantVector(x::CovariantVector) = ContravariantVector(x.C.G*x.r,x.C)
+ContravariantVector(x::CovariantVector) = ContravariantVector(x.C.invG*x.r,x.C)
 
 
 CovariantVector(x::CovariantVector) = x
@@ -270,20 +270,20 @@ cross(x::CartesianVector,y::CartesianVector) = CartesianVector(cross(x.r,y.r))
 
 #calculus (see Aris 1989; p.169-170)
 
-#Aris eq. (7.55.4) covariant differentiation of a contravariant vector -mismatch ?
-differentiate(A::CovariantVector,j::Int,k::Int) = ∂(A.r[j],A.C.q[k]) + sum([A.C.Γ[j,i,k]*A.r[i] for i=1:3])
+#Aris eq. (7.55.4) covariant differentiation of a contravariant vector
+differentiate(A::ContravariantVector,j::Int,k::Int) = ∂(A.r[j],A.C.q[k]) + sum([A.C.Γ[j,i,k]*A.r[i] for i=1:3])
 
 #Aris eq. (7.55.5) covariant differentiation of a covariant vector
-differentiate(A::ContravariantVector,j::Int,k::Int) = ∂(A.r[j],A.C.q[k]) - sum([A.C.Γ[i,j,k]*A.r[i] for i=1:3])
+differentiate(A::CovariantVector,j::Int,k::Int) = ∂(A.r[j],A.C.q[k]) - sum([A.C.Γ[i,j,k]*A.r[i] for i=1:3])
 
 
 # maybe define scalar in coordinates to avoid second argument?
 grad(f::Sym,C::CoordinateSystem) = ContravariantVector([∂(f,C.q[i]) for i=1:3],C)
 ∇ = grad
 
-divergence(u::CovariantVector) = sum([differentiate(u,i,i) for i=1:3])
+divergence(u::ContravariantVector) = sum([differentiate(u,i,i) for i=1:3])
 # divergence(u::CovariantVector) = divergence(ContravariantVector(u))
-divergence(u::ContravariantVector) = sum([u.C.invG[i,j]*differentiate(u,i,j) for i=1:3,j=1:3])
+divergence(u::CovariantVector) = sum([u.C.invG[i,j]*differentiate(u,i,j) for i=1:3,j=1:3])
 
 # divergence(u::CovariantVector) = 1/√u.C.g*sum([∂(√u.C.g*u.r[i] , u.C.q[i]) for i=1:3])
 # divergence(u::ContravariantVector) = divergence(CovariantVector(u))
@@ -295,7 +295,7 @@ laplacian(f::Sym,C::CoordinateSystem) = 1/√C.g * sum([∂(√C.g*sum([C.invG[i
 
 
 #
-curl(u::CovariantVector) = CovariantVector( [1/√u.C.g*sum([ϵt[i,j,k]*sum([u.C.G[k,p]*differentiate(u,p,j) for p=1:3])
+curl(u::ContravariantVector) = ContravariantVector( [1/√u.C.g*sum([ϵt[i,j,k]*sum([u.C.G[k,p]*differentiate(u,p,j) for p=1:3])
                                                     for j=1:3,k=1:3 ]) for i=1:3] ,u.C)
 #
 #use equation 5.118 from curvilinear pdf lecture notes Brannon - Curvilinear Analysis in a Euclidean Space
@@ -309,7 +309,7 @@ curl(u::CovariantVector) = CovariantVector( [1/√u.C.g*sum([ϵt[i,j,k]*sum([u.C
 # curl(u::CovariantVector) = curl(ContravariantVector(u))
 
 
-curl(u::ContravariantVector) = CovariantVector( [1/√u.C.g*sum([ϵt[i,j,k]*differentiate(u,k,j) for j=1:3,k=1:3 ]) for i=1:3] ,u.C)
+curl(u::CovariantVector) = ContravariantVector( [1/√u.C.g*sum([ϵt[i,j,k]*differentiate(u,k,j) for j=1:3,k=1:3 ]) for i=1:3] ,u.C)
 
 
 #sympy conveniences
