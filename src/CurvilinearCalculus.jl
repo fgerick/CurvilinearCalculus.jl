@@ -119,7 +119,7 @@ struct GenericCoordinates <: CoordinateSystem
         Γ =  simplify.([sum([invG[i,p]*(∂(G[p,j],q[k]) + ∂(G[p,k],q[j]) - ∂(G[j,k],q[p])) for p=1:3])/2 for i=1:3,j=1:3,k=1:3])
         gdet = simplify(det(G))
         # @assert J^2==gdet
-        return new(q,g_cov,g_contra,e_cov,F, G,invG,J,gdet,Γ)
+        return new(q,g_cov,g_contra,e_contra,F, G,invG,J,gdet,Γ)
     end
 end
 
@@ -226,12 +226,12 @@ import Base.*,Base.-,Base.+,Base./
 
 #algebra for the two bases
 
-function dot(x::CovariantVector,y::CovariantVector)
+function dot(x::ContravariantVector,y::ContravariantVector)
     @assert y.C.G == x.C.G
     return dot(x.C.G*x.r,y.r)
 end
 
-function dot(x::ContravariantVector,y::ContravariantVector)
+function dot(x::CovariantVector,y::CovariantVector)
     @assert y.C.G == x.C.G
     return dot(x.C.invG*x.r,y.r)
 end
