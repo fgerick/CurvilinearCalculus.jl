@@ -3,4 +3,6 @@ using Test
 
 
 
-@time @testset "Spherical coordinates" begin include("spherical.jl") end
+@testset "Spherical coordinates" begin include("spherical.jl") end
+
+@testset "Non-orthogonal elliptical coordinates" begin include("ellipse.jl") end

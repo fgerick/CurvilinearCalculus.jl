@@ -1,5 +1,3 @@
-__precompile__(false)
-
 module CurvilinearCalculus
 
 using SymPy, PyCall, LinearAlgebra, StaticArrays, Combinatorics
@@ -13,7 +11,7 @@ export Q, assume, global_assumptions, simplify, refine, ∂
 
 #algebra & calculus
 export dot,cross
-export ∇, grad, divergence, curl, laplacian
+export ∇, grad, divergence, curl, laplacian, ∇², Δ
 
 
 
@@ -175,17 +173,20 @@ ContravariantVector(x::ContravariantVector) = x
 
 CartesianVector(x::CovariantVector) = CartesianVector(sum([x.r[i]*x.C.g_cov[i] for i=1:3]))
 CartesianVector(x::ContravariantVector) = CartesianVector(sum([x.r[i]*x.C.g_contra[i] for i=1:3]))
+#alternative transform:
+#CartesianVector(x::ContravariantVector) = CartesianVector(CS.F*x.r)
+
 CartesianVector(x::PhysicalVector) = CartesianVector(sum([x.r[i]*x.C.e_cov[i] for i=1:3]))
 CartesianVector(x::CartesianVector) = x
 
-PhysicalVector(x::CovariantVector) = PhysicalVector(x.r .* .√diag(x.C.G),x.C)
+PhysicalVector(x::CovariantVector) = PhysicalVector(x.r .* .√diag(x.C.invG),x.C)
 PhysicalVector(x::ContravariantVector) = PhysicalVector(CovariantVector(x))#.r .* .√diag(x.C.invG) # PhysicalVector(CovariantVector(x))
 
-CovariantVector(x::PhysicalVector) = CovariantVector(x.r ./ .√diag(x.C.G),x.C)
-ContravariantVector(x::PhysicalVector) = ContravariantVector(x.r ./ .√diag(x.C.invG),x.C)
+CovariantVector(x::PhysicalVector) = CovariantVector(x.r ./ .√diag(x.C.invG),x.C)
+ContravariantVector(x::PhysicalVector) = ContravariantVector(x.r ./ .√diag(x.C.G),x.C)
 
-CovariantVector(x::CartesianVector,CS::CoordinateSystem) = CovariantVector(inv(CS.F)*x.r,CS)
-ContravariantVector(x::CartesianVector,CS::CoordinateSystem) = ContravariantVector(CovariantVector(x,CS))
+ContravariantVector(x::CartesianVector,CS::CoordinateSystem) = ContravariantVector(inv(CS.F)*x.r,CS)
+CovariantVector(x::CartesianVector,CS::CoordinateSystem) = CovariantVector(ContravariantVector(x,CS))
 
 #arithmetic functions:
 import Base.*,Base.-,Base.+,Base./
@@ -246,9 +247,6 @@ dot(x::CartesianVector,y::ContravariantVector) = dot(x,CartesianVector(y))
 dot(x::CovariantVector,y::CartesianVector) = dot(y,x)
 dot(x::ContravariantVector,y::CartesianVector) = dot(y,x)
 
-
-
-
 function cross(x::ContravariantVector,y::ContravariantVector)
     @assert y.C.G == x.C.G
     rout = Vector3D([sum(1/√x.C.g*[ϵ([i,j,k])*x.r[j]*y.r[k] for j=1:3,k=1:3]) for i=1:3]...)
@@ -282,32 +280,17 @@ grad(f::Sym,C::CoordinateSystem) = ContravariantVector([∂(f,C.q[i]) for i=1:3]
 ∇ = grad
 
 divergence(u::ContravariantVector) = sum([differentiate(u,i,i) for i=1:3])
-# divergence(u::CovariantVector) = divergence(ContravariantVector(u))
 divergence(u::CovariantVector) = sum([u.C.invG[i,j]*differentiate(u,i,j) for i=1:3,j=1:3])
 
-# divergence(u::CovariantVector) = 1/√u.C.g*sum([∂(√u.C.g*u.r[i] , u.C.q[i]) for i=1:3])
-# divergence(u::ContravariantVector) = divergence(CovariantVector(u))
-# divergence(u::ContravariantVector) = 1/√u.C.g*sum([∂(√u.C.g*sum([u.C.invG[i,j]*u.r[i] for i=1:3]) , u.C.q[j]) for j=1:3])
 
 laplacian(f::Sym,C::CoordinateSystem) = 1/√C.g * sum([∂(√C.g*sum([C.invG[i,j]*∂(f,C.q[i]) for i=1:3]),C.q[j]) for j=1:3])
 Δ  = laplacian
 ∇² = Δ
 
 
-#
+
 curl(u::ContravariantVector) = ContravariantVector( [1/√u.C.g*sum([ϵt[i,j,k]*sum([u.C.G[k,p]*differentiate(u,p,j) for p=1:3])
                                                     for j=1:3,k=1:3 ]) for i=1:3] ,u.C)
-#
-#use equation 5.118 from curvilinear pdf lecture notes Brannon - Curvilinear Analysis in a Euclidean Space
-
-# function curl(u::ContravariantVector)
-#     b1 = -1/(√u.C.g)*( differentiate(u,2,3)-differentiate(u,3,2) )
-#     b2 = -1/(√u.C.g)*( differentiate(u,3,1)-differentiate(u,1,3) )
-#     b3 = -1/(√u.C.g)*( differentiate(u,1,2)-differentiate(u,2,1) )
-#     return CovariantVector([b1,b2,b3],u.C)
-# end
-# curl(u::CovariantVector) = curl(ContravariantVector(u))
-
 
 curl(u::CovariantVector) = ContravariantVector( [1/√u.C.g*sum([ϵt[i,j,k]*differentiate(u,k,j) for j=1:3,k=1:3 ]) for i=1:3] ,u.C)
 
