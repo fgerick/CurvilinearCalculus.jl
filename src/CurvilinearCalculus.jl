@@ -7,7 +7,8 @@ export CoordinateSystem, GenericCoordinates, @coordinates, isorthogonal,
         CartesianVector, PhysicalVector
 
 #sympy:
-export Q, assume, global_assumptions, simplify, refine, ∂
+# export Q, assume, global_assumptions, simplify, refine, ∂
+export @syms, simplify, ∂, applyassumptions
 
 #algebra & calculus
 export dot,cross
@@ -41,18 +42,19 @@ import LinearAlgebra.norm
 dot(x::Sym, y::Sym) = sum(x.*y)
 dot(x::Vector3D, y::Vector3D) = sum(x.*y)
 
-
+applyassumptions(x::Sym,assumptions::Dict) = x(assumptions)
+applyassumptions(x::AbstractArray{Sym},assumptions::Dict) = map(xi->applyassumptions(xi,assumptions),x)
 #make assumptions work (kind of?)
-sp = pyimport("sympy")
-global_assumptions=sp.assumptions.assume.global_assumptions #[:assume][:global_assumptions];
-
-function assumeglobal!(as,global_assumptions=sp.assumptions.assume.global_assumptions) #[:assume][:global_assumptions])
-    global_assumptions.add(as)
-end
-
-function assume(var,condition)
-    assumeglobal!(eval(:(Q.$(condition)($(var)))),CurvilinearCalculus.global_assumptions)
-end
+# sp = pyimport("sympy")
+# global_assumptions=sp.assumptions.assume.global_assumptions #[:assume][:global_assumptions];
+#
+# function assumeglobal!(as,global_assumptions=sp.assumptions.assume.global_assumptions) #[:assume][:global_assumptions])
+#     global_assumptions.add(as)
+# end
+#
+# function assume(var,condition)
+#     assumeglobal!(eval(:(Q.$(condition)($(var)))),CurvilinearCalculus.global_assumptions)
+# end
 
 
 """
@@ -276,7 +278,7 @@ differentiate(A::CovariantVector,j::Int,k::Int) = ∂(A.r[j],A.C.q[k]) - sum([A.
 
 
 # maybe define scalar in coordinates to avoid second argument?
-grad(f::Sym,C::CoordinateSystem) = ContravariantVector([∂(f,C.q[i]) for i=1:3],C)
+grad(f::Sym,C::CoordinateSystem) = CovariantVector([∂(f,C.q[i]) for i=1:3],C)
 ∇ = grad
 
 divergence(u::ContravariantVector) = sum([differentiate(u,i,i) for i=1:3])

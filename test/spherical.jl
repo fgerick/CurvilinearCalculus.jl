@@ -1,3 +1,6 @@
+
+# using Revise
+# revise()
 q = @coordinates r θ ϕ
 r,θ,ϕ = q
 x = r*cos(ϕ)*sin(θ)
@@ -26,14 +29,41 @@ CS = GenericCoordinates(cmap,q)
 f=CurvilinearCalculus.SymFunction("f")
 u₁,u₂,u₃=CurvilinearCalculus.SymFunction("u₁,u₂,u₃");
 
-r_physical = PhysicalVector([u₁(q...),u₂(q...),u₃(q...)],CS)
-r_cov = CovariantVector(r_physical)
-r_contra = CovariantVector(r_physical)
+u_phys = PhysicalVector([u₁(q...),u₂(q...),u₃(q...)],CS)
 
-# @test PhysicalVector(∇(f(q...),CS)).r == Vector3D(∂(f(q...),r),∂(f(q...),θ)/r,∂(f(q...),z))
+u_cov = CovariantVector(u_phys)
+u_contra = CovariantVector(u_phys)
 
-@test simplify.(refine.(curl(∇(f(q...),CS)).r)) == Vector3D(0,0,0)
-@test divergence(curl(r_cov)) == 0
-@test divergence(curl(r_contra)) == 0
+@test u_phys.r == PhysicalVector(u_cov).r
+@test u_phys.r == PhysicalVector(u_contra).r
 
-@test simplify(laplacian(f(q...),CS)) == simplify(divergence(∇(f(q...),CS)))
+
+assumptions=Dict(abs(sin(θ))=>sin(θ),sign(sin(θ))=>1,sign(r)=>1,abs(r)=>r)
+
+@test simplify(applyassumptions(divergence(r_cov),assumptions)) == simplify(∂(u_phys.r[1]*r^2,r)/r^2 + 1/(r*sin(θ))*∂(u_phys.r[2]*sin(θ),θ) + 1/(r*sin(θ))*∂(u_phys.r[3],ϕ))
+
+
+curlU = [(∂(u_phys.r[3]*sin(θ),θ)-∂(u_phys.r[2],ϕ))/(r*sin(θ)),
+         1/r*(∂(u_phys.r[1],ϕ)/sin(θ) - ∂(r*u_phys.r[3],r) ),
+         1/r*(∂(r*u_phys.r[2],r) - ∂(u_phys.r[1],θ)  )]
+
+curlU_contra = simplify.(applyassumptions(PhysicalVector(curl(u_contra)).r,assumptions))
+curlU_cov = simplify.(applyassumptions(PhysicalVector(curl(u_cov)).r,assumptions))
+
+@test curlU_contra == simplify.(curlU)
+@test curlU_cov == simplify.(curlU)
+
+
+
+# revise()
+gradf = applyassumptions(PhysicalVector(∇(f(q...),CS)).r,assumptions)
+
+@test gradf == [∂(f(q...),r), ∂(f(q...),θ)/r, ∂(f(q...),ϕ)/(r*sin(θ))]
+
+curlofgrad = simplify.(applyassumptions(PhysicalVector(curl(∇(f(q...),CS))).r,assumptions))
+
+@test curlofgrad == [0,0,0]
+@test simplify(applyassumptions(divergence(curl(u_cov)),assumptions)) == 0
+@test simplify(applyassumptions(divergence(curl(u_contra)),assumptions)) == 0
+
+@test simplify(applyassumptions(laplacian(f(q...),CS),assumptions)) == simplify(applyassumptions(divergence(∇(f(q...),CS)),assumptions))
