@@ -40,7 +40,7 @@ u_contra = CovariantVector(u_phys)
 
 assumptions=Dict(abs(sin(θ))=>sin(θ),sign(sin(θ))=>1,sign(r)=>1,abs(r)=>r)
 
-@test simplify(applyassumptions(divergence(r_cov),assumptions)) == simplify(∂(u_phys.r[1]*r^2,r)/r^2 + 1/(r*sin(θ))*∂(u_phys.r[2]*sin(θ),θ) + 1/(r*sin(θ))*∂(u_phys.r[3],ϕ))
+@test simplify(applyassumptions(divergence(u_cov),assumptions)) == simplify(∂(u_phys.r[1]*r^2,r)/r^2 + 1/(r*sin(θ))*∂(u_phys.r[2]*sin(θ),θ) + 1/(r*sin(θ))*∂(u_phys.r[3],ϕ))
 
 
 curlU = [(∂(u_phys.r[3]*sin(θ),θ)-∂(u_phys.r[2],ϕ))/(r*sin(θ)),

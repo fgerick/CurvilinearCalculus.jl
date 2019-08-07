@@ -5,9 +5,6 @@ q = Vector3D(s,ϕ,z);
 
 ψ,ξ,A = CurvilinearCalculus.SymFunction("ψ,ξ,A");
 
-∂=diff
-∫=integrate
-H = √(1-s^2)
 xc=a*s*cos(ϕ)
 yc=b*s*sin(ϕ)
 zc = c*z
