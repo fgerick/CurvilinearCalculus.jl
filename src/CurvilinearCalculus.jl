@@ -7,7 +7,6 @@ export CoordinateSystem, GenericCoordinates, @coordinates, isorthogonal,
         CartesianVector, PhysicalVector
 
 #sympy:
-# export Q, assume, global_assumptions, simplify, refine, ∂
 export @syms, simplify, ∂, applyassumptions
 
 #algebra & calculus
@@ -44,17 +43,6 @@ dot(x::Vector3D, y::Vector3D) = sum(x.*y)
 
 applyassumptions(x::Sym,assumptions::Dict) = x(assumptions)
 applyassumptions(x::AbstractArray{Sym},assumptions::Dict) = map(xi->applyassumptions(xi,assumptions),x)
-#make assumptions work (kind of?)
-# sp = pyimport("sympy")
-# global_assumptions=sp.assumptions.assume.global_assumptions #[:assume][:global_assumptions];
-#
-# function assumeglobal!(as,global_assumptions=sp.assumptions.assume.global_assumptions) #[:assume][:global_assumptions])
-#     global_assumptions.add(as)
-# end
-#
-# function assume(var,condition)
-#     assumeglobal!(eval(:(Q.$(condition)($(var)))),CurvilinearCalculus.global_assumptions)
-# end
 
 
 """
@@ -92,6 +80,7 @@ Defines a (non-)orthogonal coordinate system with fields
 struct GenericCoordinates <: CoordinateSystem
     q::SVector{3,Coordinate}
     g_cov::Vector{CartesianVector}
+    e_cov::Vector{CartesianVector}
     g_contra::Vector{CartesianVector}
     e_contra::Vector{CartesianVector}
     F::Metric
@@ -102,19 +91,19 @@ struct GenericCoordinates <: CoordinateSystem
     Γ::SArray{Tuple{3,3,3},Sym}
 
     function GenericCoordinates(r::CoordinateMapping, q::SVector{3,Coordinate})
-        g_contra = [CartesianVector(∂.(r,q)) for q in q]
-        J = simplify(g_contra[1] ⋅ (g_contra[2] × g_contra[3]))
-        g¹= simplify(1/J * g_contra[2] × g_contra[3])
-        g²= simplify(1/J * g_contra[3] × g_contra[1])
-        g³= simplify(1/J * g_contra[1] × g_contra[2])
-        g_cov = [g¹, g², g³]
-        G = simplify.([g_contra[i] ⋅ g_contra[j] for i = 1:3, j = 1:3])
+        g_cov = [CartesianVector(∂.(r,q)) for q in q]
+        J = simplify(g_cov[1] ⋅ (g_cov[2] × g_cov[3]))
+        g_contra1 = simplify(1/J * g_cov[2] × g_cov[3])
+        g_contra2 = simplify(1/J * g_cov[3] × g_cov[1])
+        g_contra3 = simplify(1/J * g_cov[1] × g_cov[2])
+        g_cov = [g_contra1, g_contra2, g_contra3]
+        G = simplify.([g_cov[i] ⋅ g_cov[j] for i = 1:3, j = 1:3])
         F = [∂(r[i],q[j]) for i=1:3,j=1:3] #transformation
         # invG = simplify.(inv(G))
-        invG = simplify.([g_cov[i] ⋅ g_cov[j] for i = 1:3, j = 1:3])
+        invG = simplify.([g_contra[i] ⋅ g_contra[j] for i = 1:3, j = 1:3])
 
-        e_contra = [simplify(g_contra[i]/√G[i,i]) for i in 1:3]
-        # e_contra = [simplify.(g_contra[i]/√invG[i,i]) for i in 1:3]
+        e_cov = [simplify(g_cov[i]/√G[i,i]) for i in 1:3]
+        e_contra = [simplify.(g_contra[i]/√invG[i,i]) for i in 1:3]
 
         Γ =  simplify.([sum([invG[i,p]*(∂(G[p,j],q[k]) + ∂(G[p,k],q[j]) - ∂(G[j,k],q[p])) for p=1:3])/2 for i=1:3,j=1:3,k=1:3])
         gdet = simplify(det(G))
