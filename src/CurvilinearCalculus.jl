@@ -241,13 +241,13 @@ dot(x::CartesianVector,y::CartesianVector) = dot(x.r,y.r)
 
 #between different bases:
 
-dot(x::CartesianVector,y::CCVector, args...) = dot(x,CartesianVector(y), args...)
+dot(x::CartesianVector,y::CCVector, args...) = dot(x,CartesianVector(y, args...))
 dot(x::CCVector,y::CartesianVector, args...) = dot(y,x, args...)
 
 function cross(x::CCVector,y::CCVector, usecontracomps::Bool=true)
     @assert y.C.G == x.C.G
-    cov = Vector3D([sum(√x.C.g*[ϵ([i,j,k])*x.contra[j]*y.contra[k] for j=1:3,k=1:3]) for i=1:3]...)
-    contra = Vector3D([sum(1/√x.C.g*[ϵ([i,j,k])*x.cov[j]*y.cov[k] for j=1:3,k=1:3]) for i=1:3]...)
+    cov = Vector3D([sum(x.C.J*[ϵ([i,j,k])*x.contra[j]*y.contra[k] for j=1:3,k=1:3]) for i=1:3]...)
+    contra = Vector3D([sum(1/x.C.J*[ϵ([i,j,k])*x.cov[j]*y.cov[k] for j=1:3,k=1:3]) for i=1:3]...)
     CCVector(cov,contra,x.C)
 end
 
