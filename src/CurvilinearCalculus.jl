@@ -2,7 +2,7 @@ module CurvilinearCalculus
 
 using SymPy, PyCall, LinearAlgebra, StaticArrays, Combinatorics
 
-export CoordinateSystem, GenericCoordinates, @coordinates, isorthogonal,
+export CoordinateSystem, GenericCoordinates, isorthogonal,
         Vector3D, CoordinateMapping, Metric, CCVector, CartesianVector,
         PhysicalVector
 
@@ -43,17 +43,6 @@ dot(x::Vector3D, y::Vector3D) = sum(x.*y)
 
 applyassumptions(x::Sym,assumptions::Dict) = x(assumptions)
 applyassumptions(x::AbstractArray{Sym},assumptions::Dict) = map(xi->applyassumptions(xi,assumptions),x)
-
-
-"""
-create coordinate vector
-"""
-macro coordinates(x,y,z)
-    x,y,z = eval(:(@syms $x $y $z real=true))
-    q = SVector(x,y,z)
-    return q
-end
-
 
 
 struct CartesianVector
