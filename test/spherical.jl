@@ -1,6 +1,4 @@
 
-using Revise, CurvilinearCalculus, SymPy,StaticArrays, Test
-# revise()
 @syms r θ ϕ real=true positive=true
 q = Vector3D(r,θ,ϕ)
 x = r*cos(ϕ)*sin(θ)
