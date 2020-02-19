@@ -1,8 +1,8 @@
 
-# using Revise
+using Revise, CurvilinearCalculus, SymPy,StaticArrays, Test
 # revise()
-q = @coordinates r θ ϕ
-r,θ,ϕ = q
+@syms r θ ϕ real=true positive=true
+q = Vector3D(r,θ,ϕ)
 x = r*cos(ϕ)*sin(θ)
 y = r*sin(ϕ)*sin(θ)
 z = r*cos(θ)
@@ -32,7 +32,7 @@ u₁,u₂,u₃=CurvilinearCalculus.SymFunction("u₁,u₂,u₃");
 
 u_phys = PhysicalVector([u₁(q...),u₂(q...),u₃(q...)],CS)
 u_cc = CCVector(u_phys)
-@test PhysicalVector(u_cc).r==u_phys.r
+@test PhysicalVector(u_cc).r == u_phys.r
 # u_cov = CovariantVector(u_phys)
 # u_contra = CovariantVector(u_phys)
 
@@ -42,33 +42,29 @@ u_cc = CCVector(u_phys)
 
 assumptions=Dict(abs(sin(θ))=>sin(θ),sign(sin(θ))=>1,sign(r)=>1,abs(r)=>r)
 
-@test simplify(applyassumptions(divergence(u_cc),assumptions)) == simplify(∂(u_phys.r[1]*r^2,r)/r^2 + 1/(r*sin(θ))*∂(u_phys.r[2]*sin(θ),θ) + 1/(r*sin(θ))*∂(u_phys.r[3],ϕ))
 
-@test simplify(applyassumptions(divergence(u_cc,false),assumptions)) == simplify(∂(u_phys.r[1]*r^2,r)/r^2 + 1/(r*sin(θ))*∂(u_phys.r[2]*sin(θ),θ) + 1/(r*sin(θ))*∂(u_phys.r[3],ϕ))
+@test simplify(divergence(u_cc)(assumptions...)) ==
+      simplify(∂(u_phys.r[1]*r^2,r)/r^2 + 1/(r*sin(θ))*∂(u_phys.r[2]*sin(θ),θ) + 1/(r*sin(θ))*∂(u_phys.r[3],ϕ))
 
 
 
-curlU = [(∂(u_phys.r[3]*sin(θ),θ)-∂(u_phys.r[2],ϕ))/(r*sin(θ)),
+curlU_correct = simplify.([(∂(u_phys.r[3]*sin(θ),θ)-∂(u_phys.r[2],ϕ))/(r*sin(θ)),
          1/r*(∂(u_phys.r[1],ϕ)/sin(θ) - ∂(r*u_phys.r[3],r) ),
-         1/r*(∂(r*u_phys.r[2],r) - ∂(u_phys.r[1],θ)  )]
+         1/r*(∂(r*u_phys.r[2],r) - ∂(u_phys.r[1],θ)  )])
 # revise()
-curlU_contra = simplify.(applyassumptions(PhysicalVector(curl(u_cc)).r,assumptions))
-curlU_cov = simplify.(applyassumptions(PhysicalVector(curl(u_cc,false)).r,assumptions))
+curlU = map(x->simplify(x(assumptions...)),PhysicalVector(curl(u_cc)).r)
 
-@test curlU_contra == simplify.(curlU)
-@test curlU_cov == simplify.(curlU)
+@test curlU == curlU_correct
 
 
+gradf = map(x->simplify(x(assumptions...)),PhysicalVector(∇(f(q...),CS)).r)
+gradf_correct = [∂(f(q...),r), ∂(f(q...),θ)/r, ∂(f(q...),ϕ)/(r*sin(θ))]
 
-# revise()
-gradf = applyassumptions(PhysicalVector(∇(f(q...),CS)).r,assumptions)
+@test gradf == gradf_correct
 
-@test gradf == [∂(f(q...),r), ∂(f(q...),θ)/r, ∂(f(q...),ϕ)/(r*sin(θ))]
-
-curlofgrad = simplify.(applyassumptions(PhysicalVector(curl(∇(f(q...),CS))).r,assumptions))
+curlofgrad = map(x->simplify(x(assumptions...)),PhysicalVector(curl(∇(f(q...),CS))).r)
 
 @test curlofgrad == [0,0,0]
-@test simplify(applyassumptions(divergence(curl(u_cc)),assumptions)) == 0
-@test simplify(applyassumptions(divergence(curl(u_cc,false)),assumptions)) == 0
+@test simplify(divergence(curl(u_cc))(assumptions...)) == 0
 
-@test simplify(applyassumptions(laplacian(f(q...),CS),assumptions)) == simplify(applyassumptions(divergence(∇(f(q...),CS)),assumptions))
+@test simplify(laplacian(f(q...),CS)(assumptions...)) == simplify(divergence(∇(f(q...),CS))(assumptions...))
