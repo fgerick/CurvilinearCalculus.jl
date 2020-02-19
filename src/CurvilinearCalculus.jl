@@ -212,7 +212,7 @@ import Base.*,Base.-,Base.+,Base./
 -(x::CartesianVector,y::CartesianVector) = CartesianVector(x.r .- y.r)
 
 
-*(a::Number,x::T) where T<: CCVector = T(x.r*a,x.C)
+*(a::Number,x::T) where T<: CCVector = T(x.cov*a,x.contra*a,x.C)
 *(x::T,a::Number) where T<: CCVector = a*x
 
 /(x::T,a::Number) where T<: CCVector = T(x.r ./a,x.C)
