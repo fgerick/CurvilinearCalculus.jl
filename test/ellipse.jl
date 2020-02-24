@@ -10,6 +10,7 @@ yc=b*s*sin(ϕ)
 zc = c*z
 cmap = CoordinateMapping(xc,yc,zc)
 CS = GenericCoordinates(cmap,q)
+CS = simplify(CS)
 
 @test !isorthogonal(CS)
 

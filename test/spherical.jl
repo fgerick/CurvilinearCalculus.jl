@@ -7,7 +7,7 @@ z = r*cos(θ)
 
 cmap = CoordinateMapping(x,y,z)
 CS = GenericCoordinates(cmap,q)
-
+CS = simplify(CS)
 @test isorthogonal(CS)
 
 
