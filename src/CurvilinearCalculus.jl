@@ -41,32 +41,33 @@ import LinearAlgebra.norm
 dot(x::Sym, y::Sym) = sum(x.*y)
 dot(x::Vector3D, y::Vector3D) = sum(x.*y)
 
-applyassumptions(x::Sym,assumptions::Dict) = x(assumptions)
-applyassumptions(x::AbstractArray{Sym},assumptions::Dict) = map(xi->applyassumptions(xi,assumptions),x)
+"""
+    struct CartesianVector
 
-
+DOCSTRING
+"""
 struct CartesianVector
     r::Vector3D
 end
 
 
 """
-`GenericCoordinates(r::CoordinateMapping, q::SVector{3,Coordinate})`
+    struct GenericCoordinates <: CoordinateSystem
 
 Defines a (non-)orthogonal coordinate system with fields
 
-`q` Coordinates,
-`g_cov` Covariant basis vectors (in Cartesian coordinates),
-`e_cov` Covariant unit vectors (in Cartesian coordinates),
-`g_contra` Contravariant basis vectors (in Cartesian coordinates),
-`e_contra` Contravariant unit vectors (in Cartesian coordinates),
-`F` transformation matrix new coordinates to Cartesian,
-`G` Metric (defined by dot products of covariant basis vectors),
-`invG` Inverse of metric,
-`J` Volume element,
-`g` J^2 or det(G),
-`Γ` Christoffel symbols Γⁱⱼₖ → Γ[i,j,k]
-
+#Arguments:
+- `q`: Coordinates
+- `g_cov`: Covariant basis vectors (in Cartesian coordinates)
+- `e_cov`: Covariant unit vectors (in Cartesian coordinates)
+- `g_contra`: Contravariant basis vectors (in Cartesian coordinates)
+- `e_contra`: Contravariant unit vectors (in Cartesian coordinates)
+- `F`: transformation matrix new coordinates to Cartesian
+- `G`: Metric (defined by dot products of covariant basis vectors)
+- `invG`: Inverse of metric
+- `J`: Volume element
+- `g`: J^2 or det(G)
+- `Γ`: Christoffel symbols Γⁱⱼₖ → Γ[i,j,k]
 """
 struct GenericCoordinates <: CoordinateSystem
     q::SVector{3,Coordinate}
@@ -82,6 +83,11 @@ struct GenericCoordinates <: CoordinateSystem
     Γ::SArray{Tuple{3,3,3},Sym}
 end
 
+"""
+    GenericCoordinates(r::CoordinateMapping, q::SVector{3, Coordinate})
+
+DOCSTRING
+"""
 function GenericCoordinates(r::CoordinateMapping, q::SVector{3,Coordinate})
     g_cov = [CartesianVector(∂.(r,q)) for q in q] #eq (5.13)
     J = simplify(g_cov[1] ⋅ (g_cov[2] × g_cov[3]))
@@ -103,19 +109,34 @@ function GenericCoordinates(r::CoordinateMapping, q::SVector{3,Coordinate})
 end
 
 """
+    isorthogonal(C::GenericCoordinates) = begin
+
 Check if coordinate system is orthogonal
 """
 isorthogonal(C::GenericCoordinates) = isdiag(C.G)
 
 
 
+"""
+    struct PhysicalVector
 
+DOCSTRING
+"""
 struct PhysicalVector
     r::Vector3D
     C::GenericCoordinates
 end
 
-#use one vector type with both covariant and contravariant components
+"""
+    struct CCVector
+
+DOCSTRING
+
+#Arguments:
+- `cov`: DESCRIPTION
+- `contra`: DESCRIPTION
+- `C`: DESCRIPTION
+"""
 struct CCVector
     cov::Vector3D #covariant vector components uᵢ, so that 𝐮 = uᵢ𝐠ⁱ
     contra::Vector3D #contravariant vector components uⁱ, so that 𝐮 = uⁱ𝐠ᵢ
@@ -133,11 +154,25 @@ Base.show(io::IO, ::MIME"text/latex", x::Vector3D) = print(io, SymPy.sympy.latex
 #conversion between contravariant and covariant basis and Cartesian
 
 #transform covariant vector components to contravariant vector components
+"""
+    cov2contra(covcomps::Vector3D, C::CoordinateSystem) = begin
 
+DOCSTRING
+"""
 cov2contra(covcomps::Vector3D,C::CoordinateSystem) = C.invG*covcomps #(eq 2.38)
+
+"""
+    contra2cov(contracomps::Vector3D, C::CoordinateSystem) = begin
+
+DOCSTRING
+"""
 contra2cov(contracomps::Vector3D,C::CoordinateSystem) = C.G*contracomps #(eq 2.40)
 
+"""
+    CartesianVector(x::CCVector, usecontracomps::Bool=true)
 
+DOCSTRING
+"""
 function CartesianVector(x::CCVector,usecontracomps::Bool=true)
     usecontracomps ? CartesianVector(sum([x.contra[i]*x.C.g_cov[i] for i=1:3])) : CartesianVector(sum([x.cov[i]*x.C.g_contra[i] for i=1:3]))
 end
@@ -158,6 +193,11 @@ function CCVector(x::PhysicalVector)
 end
 
 # ContravariantVector(x::PhysicalVector) = ContravariantVector(x.r ./ .√diag(x.C.G),x.C)
+"""
+    CCVector(x::CartesianVector, CS::CoordinateSystem)
+
+DOCSTRING
+"""
 function CCVector(x::CartesianVector,CS::CoordinateSystem)
     contra = Vector3D(inv(CS.F)*x.r)
     cov = contra2cov(contra,CS)
@@ -252,6 +292,11 @@ differentiatecov(A::CCVector,j::Int,k::Int) = ∂(A.cov[j],A.C.q[k]) - sum([A.C.
 
 
 # maybe define scalar in coordinates to avoid second argument?
+"""
+    grad(f::Sym, C::CoordinateSystem)
+
+DOCSTRING
+"""
 function grad(f::Sym,C::CoordinateSystem)
     cov = Vector3D([∂(f,C.q[i]) for i=1:3])
     contra = cov2contra(cov,C)
@@ -259,15 +304,29 @@ function grad(f::Sym,C::CoordinateSystem)
 end
 ∇ = grad
 
+"""
+    divergence(u::CCVector, usecontracomps::Bool=true)
 
+DOCSTRING
+"""
 function divergence(u::CCVector, usecontracomps::Bool=true)
     usecontracomps ? sum([differentiatecontra(u,i,i) for i=1:3]) : sum([u.C.invG[i,j]*differentiatecov(u,i,j) for i=1:3,j=1:3])
 end
 
+"""
+    laplacian(f::Sym, C::CoordinateSystem) = begin
+
+DOCSTRING
+"""
 laplacian(f::Sym,C::CoordinateSystem) = 1/√C.g * sum([∂(√C.g*sum([C.invG[i,j]*∂(f,C.q[i]) for i=1:3]),C.q[j]) for j=1:3])
 Δ  = laplacian
 ∇² = Δ
 
+"""
+    curl(u::CCVector, usecontracomps::Bool=true)
+
+DOCSTRING
+"""
 function curl(u::CCVector, usecontracomps::Bool=true)
     contra = usecontracomps ? [1/√u.C.g*sum([ϵt[i,j,k]*sum([u.C.G[k,p]*differentiatecontra(u,p,j) for p=1:3]) for j=1:3,k=1:3 ]) for i=1:3] : [1/√u.C.g*sum([ϵt[i,j,k]*differentiatecov(u,k,j) for j=1:3,k=1:3 ]) for i=1:3]
     contra = Vector3D(contra)
@@ -282,6 +341,11 @@ simplify(x::CCVector) = CCVector(simplify.(x.cov),simplify.(x.contra),x.C)
 
 simplify(x::CartesianVector) = CartesianVector(simplify.(x.r))
 
+"""
+    simplify(C::GenericCoordinates)
+
+DOCSTRING
+"""
 function simplify(C::GenericCoordinates)
     return GenericCoordinates(C.q,
                 simplify.(C.g_cov),
