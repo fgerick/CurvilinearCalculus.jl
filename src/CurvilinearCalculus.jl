@@ -88,15 +88,15 @@ struct GenericCoordinates <: CoordinateSystem
         g_contra2 = simplify(1/J * g_cov[3] × g_cov[1])
         g_contra3 = simplify(1/J * g_cov[1] × g_cov[2])
         g_contra = [g_contra1, g_contra2, g_contra3]
-        G = simplify.([g_cov[i] ⋅ g_cov[j] for i = 1:3, j = 1:3])
+        G = [g_cov[i] ⋅ g_cov[j] for i = 1:3, j = 1:3]
         F = [∂(r[i],q[j]) for i=1:3,j=1:3] #transformation
-        invG = simplify.([g_contra[i] ⋅ g_contra[j] for i = 1:3, j = 1:3])
+        invG = [g_contra[i] ⋅ g_contra[j] for i = 1:3, j = 1:3]
 
-        e_cov = [simplify(g_cov[i]/√G[i,i]) for i in 1:3]
-        e_contra = [simplify(g_contra[i]/√invG[i,i]) for i in 1:3]
+        e_cov = [g_cov[i]/√G[i,i] for i in 1:3]
+        e_contra = [g_contra[i]/√invG[i,i] for i in 1:3]
 
-        Γ =  simplify.([sum([invG[i,p]*(∂(G[p,j],q[k]) + ∂(G[p,k],q[j]) - ∂(G[j,k],q[p])) for p=1:3])/2 for i=1:3,j=1:3,k=1:3])
-        gdet = simplify(det(G))
+        Γ =  [sum([invG[i,p]*(∂(G[p,j],q[k]) + ∂(G[p,k],q[j]) - ∂(G[j,k],q[p])) for p=1:3])/2 for i=1:3,j=1:3,k=1:3]
+        gdet = det(G)
 
         return new(q,g_cov,e_cov,g_contra,e_contra,F, G,invG,J,gdet,Γ)
     end
