@@ -80,28 +80,27 @@ struct GenericCoordinates <: CoordinateSystem
     J::Sym
     g::Sym
     Γ::SArray{Tuple{3,3,3},Sym}
-
-    function GenericCoordinates(r::CoordinateMapping, q::SVector{3,Coordinate})
-        g_cov = [CartesianVector(∂.(r,q)) for q in q] #eq (5.13)
-        J = simplify(g_cov[1] ⋅ (g_cov[2] × g_cov[3]))
-        g_contra1 = simplify(1/J * g_cov[2] × g_cov[3])
-        g_contra2 = simplify(1/J * g_cov[3] × g_cov[1])
-        g_contra3 = simplify(1/J * g_cov[1] × g_cov[2])
-        g_contra = [g_contra1, g_contra2, g_contra3]
-        G = [g_cov[i] ⋅ g_cov[j] for i = 1:3, j = 1:3]
-        F = [∂(r[i],q[j]) for i=1:3,j=1:3] #transformation
-        invG = [g_contra[i] ⋅ g_contra[j] for i = 1:3, j = 1:3]
-
-        e_cov = [g_cov[i]/√G[i,i] for i in 1:3]
-        e_contra = [g_contra[i]/√invG[i,i] for i in 1:3]
-
-        Γ =  [sum([invG[i,p]*(∂(G[p,j],q[k]) + ∂(G[p,k],q[j]) - ∂(G[j,k],q[p])) for p=1:3])/2 for i=1:3,j=1:3,k=1:3]
-        gdet = det(G)
-
-        return new(q,g_cov,e_cov,g_contra,e_contra,F, G,invG,J,gdet,Γ)
-    end
 end
 
+function GenericCoordinates(r::CoordinateMapping, q::SVector{3,Coordinate})
+    g_cov = [CartesianVector(∂.(r,q)) for q in q] #eq (5.13)
+    J = simplify(g_cov[1] ⋅ (g_cov[2] × g_cov[3]))
+    g_contra1 = simplify(1/J * g_cov[2] × g_cov[3])
+    g_contra2 = simplify(1/J * g_cov[3] × g_cov[1])
+    g_contra3 = simplify(1/J * g_cov[1] × g_cov[2])
+    g_contra = [g_contra1, g_contra2, g_contra3]
+    G = [g_cov[i] ⋅ g_cov[j] for i = 1:3, j = 1:3]
+    F = [∂(r[i],q[j]) for i=1:3,j=1:3] #transformation
+    invG = [g_contra[i] ⋅ g_contra[j] for i = 1:3, j = 1:3]
+
+    e_cov = [g_cov[i]/√G[i,i] for i in 1:3]
+    e_contra = [g_contra[i]/√invG[i,i] for i in 1:3]
+
+    Γ =  [sum([invG[i,p]*(∂(G[p,j],q[k]) + ∂(G[p,k],q[j]) - ∂(G[j,k],q[p])) for p=1:3])/2 for i=1:3,j=1:3,k=1:3]
+    gdet = det(G)
+
+    return GenericCoordinates(q,g_cov,e_cov,g_contra,e_contra,F, G,invG,J,gdet,Γ)
+end
 
 """
 Check if coordinate system is orthogonal
@@ -282,5 +281,22 @@ simplify(x::PhysicalVector) = PhysicalVector(simplify.(x.r),x.C)
 simplify(x::CCVector) = CCVector(simplify.(x.cov),simplify.(x.contra),x.C)
 
 simplify(x::CartesianVector) = CartesianVector(simplify.(x.r))
+
+function simplify(C::GenericCoordinates)
+    return GenericCoordinates(C.q,
+                simplify.(C.g_cov),
+                simplify.(C.e_cov),
+                simplify.(C.g_contra),
+                simplify.(C.e_contra),
+                simplify.(C.F),
+                simplify.(C.G),
+                simplify.(C.invG),
+                simplify.(C.J),
+                simplify.(C.g),
+                simplify.(C.Γ))
+end
+
+
+
 
 end # module
