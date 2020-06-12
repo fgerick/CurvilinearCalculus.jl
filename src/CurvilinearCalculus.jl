@@ -1,6 +1,8 @@
 module CurvilinearCalculus
 
-using SymPy, PyCall, LinearAlgebra, StaticArrays, Combinatorics
+using Reexport
+@reexport using SymPy
+using PyCall, LinearAlgebra, StaticArrays, Combinatorics
 
 export CoordinateSystem, GenericCoordinates, isorthogonal,
         Vector3D, CoordinateMapping, Metric, CCVector, CartesianVector,
@@ -38,8 +40,8 @@ import LinearAlgebra.dot
 import LinearAlgebra.cross
 import LinearAlgebra.norm
 
-dot(x::Sym, y::Sym) = sum(x.*y)
-dot(x::Vector3D, y::Vector3D) = sum(x.*y)
+# dot(x::Sym, y::Sym) = sum(x.*y)
+# dot(x::Vector3D, y::Vector3D) = sum(x.*y)
 
 """
     struct CartesianVector
@@ -226,9 +228,11 @@ import Base.*,Base.-,Base.+,Base./
 
 +(x::PhysicalVector,y::PhysicalVector) = PhysicalVector(x.r .+ y.r,x.C)
 -(x::PhysicalVector,y::PhysicalVector) = PhysicalVector(x.r .- y.r,x.C)
+-(x::PhysicalVector) = -1*x
 
 +(x::CCVector,y::CCVector) = CCVector(x.cov .+ y.cov, x.contra .+ y.contra,x.C)
-
+-(x::CCVector,y::CCVector) = CCVector(x.cov .- y.cov, x.contra .- y.contra,x.C)
+-(x::CCVector) = -1*x
 
 
 *(a::Sym,x::CartesianVector) = CartesianVector(x.r*a)
@@ -238,7 +242,7 @@ import Base.*,Base.-,Base.+,Base./
 
 +(x::CartesianVector,y::CartesianVector) = CartesianVector(x.r .+ y.r)
 -(x::CartesianVector,y::CartesianVector) = CartesianVector(x.r .- y.r)
-
+-(x::CartesianVector) = -1*x
 
 *(a::Number,x::T) where T<: CCVector = T(x.cov*a,x.contra*a,x.C)
 *(x::T,a::Number) where T<: CCVector = a*x
@@ -255,6 +259,7 @@ import Base.*,Base.-,Base.+,Base./
 
 #algebra for the two bases
 
+#7.42.6
 function dot(x::CCVector,y::CCVector,usecontracomps::Bool=true)
     @assert y.C.G == x.C.G
     usecontracomps ? dot(x.C.G*x.contra,y.contra) : dot(x.C.invG*x.cov,y.cov)
@@ -272,14 +277,18 @@ dot(x::CartesianVector,y::CartesianVector) = dot(x.r,y.r)
 dot(x::CartesianVector,y::CCVector, args...) = dot(x,CartesianVector(y, args...))
 dot(x::CCVector,y::CartesianVector, args...) = dot(y,x, args...)
 
-function cross(x::CCVector,y::CCVector, usecontracomps::Bool=true)
-    @assert y.C.G == x.C.G
-    cov = Vector3D([sum(x.C.J*[ϵ([i,j,k])*x.contra[j]*y.contra[k] for j=1:3,k=1:3]) for i=1:3]...)
-    contra = Vector3D([sum(1/x.C.J*[ϵ([i,j,k])*x.cov[j]*y.cov[k] for j=1:3,k=1:3]) for i=1:3]...)
+#aris 7.42.7
+function cross(x::CCVector,y::CCVector)
+    @assert y.C.G == x.C.G #find better/quicker comparison
+    cov = Vector3D([sum(sqrt(x.C.g)*[ϵ([i,j,k])*x.contra[j]*y.contra[k] for j=1:3,k=1:3]) for i=1:3]...)
+    contra = Vector3D([sum(1/sqrt(x.C.g)*[ϵ([i,j,k])*x.cov[j]*y.cov[k] for j=1:3,k=1:3]) for i=1:3]...)
     CCVector(cov,contra,x.C)
 end
 
 cross(x::CartesianVector,y::CartesianVector) = CartesianVector(cross(x.r,y.r))
+
+cross(x::CCVector,y::CartesianVector) = cross(x,CCVector(y,x.C))
+cross(x::CartesianVector,y::CCVector) = -cross(y,x)
 
 
 #calculus (see Aris 1989; p.169-170)

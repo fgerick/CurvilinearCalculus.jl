@@ -1,22 +1,21 @@
 using Revise, CurvilinearCalculus, LinearAlgebra
 
 # q = CurvilinearCalculus.@syms r θ ϕ
+@syms r θ ϕ real=true positive=true
+q = Vector3D(r,θ,ϕ);
 
-q = @coordinates r θ ϕ;
-r,θ,ϕ = q;
-# CurvilinearCalculus.@syms a b c real=true nonzero=true
-x = r*cos(ϕ)*sin(θ)
-y = r*sin(ϕ)*sin(θ)
-z = r*cos(θ)
 
-cmap = CoordinateMapping(x,y,z)
-
+xc = r*cos(ϕ)*sin(θ)
+yc = r*sin(ϕ)*sin(θ)
+zc = r*cos(θ)
+cmap = CoordinateMapping(xc,yc,zc)
 CS = GenericCoordinates(cmap,q)
+CS = simplify(CS)
 
 isorthogonal(CS)
 
 
-f=CurvilinearCalculus.SymFunction("f")
+@symfuns f real=true
 u₁,u₂,u₃=CurvilinearCalculus.SymFunction("u₁,u₂,u₃")
 # r3 = CovariantVector([u₁(r,θ,ϕ),u₂(r,θ,ϕ),u₃(r,θ,ϕ)],CS)
 
