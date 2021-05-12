@@ -2,17 +2,18 @@ module CurvilinearCalculus
 
 using Reexport
 @reexport using SymPy
-using PyCall, LinearAlgebra, StaticArrays, Combinatorics
+@reexport using LinearAlgebra
+using PyCall, StaticArrays, Combinatorics
 
 export CoordinateSystem, GenericCoordinates, isorthogonal,
         Vector3D, CoordinateMapping, Metric, CCVector, CartesianVector,
         PhysicalVector
 
 #sympy:
-export @syms, simplify, ∂, applyassumptions
+export ∂, applyassumptions
 
 #algebra & calculus
-export dot,cross
+# export dot,cross
 export ∇, grad, divergence, curl, laplacian, ∇², Δ
 
 
@@ -33,12 +34,12 @@ const Metric = SMatrix{3,3,Sym}
 #convenient definitions for SymPy use:
 π = PI
 ∂ = diff
-import SymPy.simplify
+import SymPy: simplify, expand
 
 # define sympy dot as real dot product only to avoid assumptions:
-import LinearAlgebra.dot
-import LinearAlgebra.cross
-import LinearAlgebra.norm
+import LinearAlgebra: dot, cross, norm
+# import LinearAlgebra.cross
+# import LinearAlgebra.norm
 
 # dot(x::Sym, y::Sym) = sum(x.*y)
 # dot(x::Vector3D, y::Vector3D) = sum(x.*y)
@@ -349,6 +350,12 @@ simplify(x::PhysicalVector) = PhysicalVector(simplify.(x.r),x.C)
 simplify(x::CCVector) = CCVector(simplify.(x.cov),simplify.(x.contra),x.C)
 
 simplify(x::CartesianVector) = CartesianVector(simplify.(x.r))
+
+
+expand(x::PhysicalVector) = PhysicalVector(expand.(x.r),x.C)
+expand(x::CCVector) = CCVector(expand.(x.cov),expand.(x.contra),x.C)
+
+expand(x::CartesianVector) = CartesianVector(expand.(x.r))
 
 """
     simplify(C::GenericCoordinates)
